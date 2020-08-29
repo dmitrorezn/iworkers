@@ -1,13 +1,16 @@
 package testmod
+
 import (
 	"errors"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"reflect"
 	"strings"
 	"sync"
+
 )
 
-func WorkersToPerson(w IWorker) Person{
+func WorkersToPerson(w IWorker) Person {
 	var person Person
 	switch value := w.(type) {
 	case *Teacher:
@@ -21,19 +24,20 @@ func WorkersToPerson(w IWorker) Person{
 	case *Doctor:
 		person = *value.Person
 	default:
-		fmt.Printf("Don't know about %T  %v\n",value,value)
+		fmt.Printf("Don't know about %T  %v\n", value, value)
 		person = Person{}
 	}
 	return person
 }
+
 //struct Cash
-type Cache struct{
+type Cache struct {
 	sync.RWMutex
-	Items  map[string]IWorker
+	Items map[string]IWorker
 }
 
 //New Cash
-func NewCash() *Cache{
+func NewCash() *Cache {
 	items := make(map[string]IWorker)
 	return &Cache{
 		Items: items,
@@ -50,6 +54,7 @@ func (c *Cache) Delete(key string) error {
 	delete(c.Items, key)
 	return nil
 }
+
 //Delete all
 func (c *Cache) DeleteAll() error {
 	if c == nil {
@@ -57,14 +62,14 @@ func (c *Cache) DeleteAll() error {
 	}
 	c.Lock()
 	defer c.Unlock()
-	for k ,_ := range c.Items {
+	for k, _ := range c.Items {
 		delete(c.Items, k)
 	}
 	return nil
 }
 
 //All Workers Talk
-func  AllWorkersTalk(c *Cache,quit chan int){
+func AllWorkersTalk(c *Cache, quit chan int) {
 	for {
 		select {
 		case <-quit:
@@ -78,7 +83,7 @@ func  AllWorkersTalk(c *Cache,quit chan int){
 	}
 }
 
-func AllChiefsTalk(c *Cache,quit chan int){
+func AllChiefsTalk(c *Cache, quit chan int) {
 	c.RLock()
 	defer c.RUnlock()
 	for _, chief := range c.Items {
@@ -88,7 +93,7 @@ func AllChiefsTalk(c *Cache,quit chan int){
 }
 
 //Add Worker to cash map
-func (c *Cache) Add(key string, item IWorker){
+func (c *Cache) Add(key string, item IWorker) {
 	c.Lock()
 	defer c.Unlock()
 	c.Items[key] = item
@@ -96,26 +101,27 @@ func (c *Cache) Add(key string, item IWorker){
 
 // interface for workers
 type IWorker interface {
-	Talk()  string
+	Talk() string
 }
 
 type Person struct {
-	Name        string
-	Surname     string
-	Patronymic  string
-	PhoneNumber uint64
-	Email       string
-	HomeAddress string
-	Age         int
-	Education   string
+	ID          primitive.ObjectID `json:"id" bson:"_id"`
+	Name        string             `json:"name" bson:"name"`
+	Surname     string             `json:"surname" bson:"surname"`
+	Patronymic  string             `json:"patronymic" bson:"patronymic"`
+	PhoneNumber uint64             `json:"phoneNumber" bson:"phoneNumber"`
+	Email       string             `json:"email" bson:"email"`
+	HomeAddress string             `json:"homeAddress" bson:"homeAddress"`
+	Age         int                `json:"age" bson:"age"`
+	Education   string             `json:"education" bson:"education"`
 }
 
-func (p Person) String() string{
-	return fmt.Sprintf("\nName: %v\nSurname: %v\nAge: %v\nEducation: %v\nEmail: %v\nAddress: %v\nPatronimic: %v\nPhoneNumber: +%v",p.Name,p.Surname,p.Age,p.Education,p.Email,p.Email,p.Patronymic,p.PhoneNumber)
+func (p Person) String() string {
+	return fmt.Sprintf("\nName: %v\nSurname: %v\nAge: %v\nEducation: %v\nEmail: %v\nAddress: %v\nPatronimic: %v\nPhoneNumber: +%v", p.Name, p.Surname, p.Age, p.Education, p.Email, p.Email, p.Patronymic, p.PhoneNumber)
 }
 
-func (p *Person) HappyBirthday(){
-	fmt.Println("CONGRADULATIONS TO ",p.Name," ",p.Surname," Happy Birthday")
+func (p *Person) HappyBirthday() {
+	fmt.Println("CONGRADULATIONS TO ", p.Name, " ", p.Surname, " Happy Birthday")
 }
 
 func (p *Person) ChangeAge() {
@@ -123,86 +129,90 @@ func (p *Person) ChangeAge() {
 }
 
 type Developer struct {
-	Position             string	  `json:"position,omitempty"`
-	ProgrammingLanguages []string `json:"programmingLanguages,omitempty",xml:",omitempty"`
-	SkillLevel           string   `json:"skillLevel,omitempty",xml:"SkillLev"`
-	ExperienceInYears    int      `json:"experience,omitempty",xml:",omitempty"`
+	Position             string   `json:"position,omitempty" bson:"position,omitempty"`
+	ProgrammingLanguages []string `json:"programmingLanguages,omitempty" bson:"programmingLanguages,omitempty"`
+	SkillLevel           string   `json:"skillLevel,omitempty" bson:"skillLevel,omitempty"`
+	ExperienceInYears    int      `json:"experience,omitempty" bson:"experience,omitempty"`
 	Person               *Person
 }
+
 // method talk for Developer to implement IWorker
-func (w Developer) Talk() string{
+func (w Developer) Talk() string {
 	s := fmt.Sprint(reflect.TypeOf(w))
-	str := strings.Split(s,".")
-	return fmt.Sprint("Hello I am ",w.Person.Name,"! My profession is ",str[1]," and I am working as ",w.Position,".")
+	str := strings.Split(s, ".")
+	return fmt.Sprint("Hello I am ", w.Person.Name, "! My profession is ", str[1], " and I am working as ", w.Position, ".")
 }
 
 type Teacher struct {
-	Position string				  `json:"position,omitempty"`
-	Subject                string `json:"subject,omitempty",xml:"Subj,omitempty"`
-	LessonsInWeek          int    `json:"lessonsInWeek,omitempty",xml:"LessInWeek,omitempty"`
-	NumberOfTeachingGroups int    `json:"numberOfGroups,omitempty",xml:"GroupsNum,omitempty"`
+	Position               string `json:"position,omitempty" bson:"position,omitempty"`
+	Subject                string `json:"subject,omitempty" bson:"subject,omitempty"`
+	LessonsInWeek          int    `json:"lessonsInWeek,omitempty" bson:"lessonsInWeek,omitempty"`
+	NumberOfTeachingGroups int    `json:"numberOfGroups,omitempty" bson:"numberOfGroups,omitempty"`
 	Person                 *Person
 }
-// method talk for Teacher to implement IWorker
-func (w Teacher) Talk() string{
-	s := fmt.Sprint(reflect.TypeOf(w))
-	str := strings.Split(s,".")
-	return fmt.Sprint("Hello I am ",w.Person.Name,"! My profession is ",str[1]," and I am working as ",w.Position,".")
-}
 
+// method talk for Teacher to implement IWorker
+func (w Teacher) Talk() string {
+	s := fmt.Sprint(reflect.TypeOf(w))
+	str := strings.Split(s, ".")
+	return fmt.Sprint("Hello I am ", w.Person.Name, "! My profession is ", str[1], " and I am working as ", w.Position, ".")
+}
 
 type Accountant struct {
-	Position string				      `json:"position,omitempty"`
-	ProgramToWorkWith         string  `json:"programToWorkWith,omitempty",xml:"Program,omitempty"`
-	MaxWorkingHoursInDay      int     `json:"maxWorkingHoursInDay,omitempty",xml:"MaxHoursInDay,omitempty"`
-	NeededExperienceInYears   int     `json:"neededExperienceInYears,omitempty",xml:"ExperienseYeas,omitempty"`
-	TypeOfDocumentsToWorkWith string  `json:"typeOfDocumentsToWorkWith,omitempty",xml:"DocumentsType,omitempty"`
+	Position                  string `json:"position,omitempty" bson:"position,omitempty" `
+	ProgramToWorkWith         string `json:"programToWorkWith,omitempty" bson:"programToWorkWith,omitempty"`
+	MaxWorkingHoursInDay      int    `json:"maxWorkingHoursInDay,omitempty" bson:"maxWorkingHoursInDay,omitempty"`
+	NeededExperienceInYears   int    `json:"neededExperienceInYears,omitempty" bson:"neededExperienceInYears,omitempty"`
+	TypeOfDocumentsToWorkWith string `json:"typeOfDocumentsToWorkWith,omitempty" bson:"typeOfDocumentsToWorkWith,omitempty"`
 	Person                    *Person
 }
+
 // method talk for Accountant to implement IWorker
-func (w Accountant) Talk() string{
+func (w Accountant) Talk() string {
 	s := fmt.Sprint(reflect.TypeOf(w))
-	str := strings.Split(s,".")
-	return fmt.Sprint("Hello I am ",w.Person.Name,"! My profession is ",str[1]," and I am working as ",w.Position,".")
+	str := strings.Split(s, ".")
+	return fmt.Sprint("Hello I am ", w.Person.Name, "! My profession is ", str[1], " and I am working as ", w.Position, ".")
 }
 
 type Doctor struct {
-	Position string				      `json:"position,omitempty"`
-	Specialization          string    `json:"specialization,omitempty",xml:"Secesilization,omitempty"`
-	DoctorGraduation        string    `json:"doctorGraduation,omitempty",xml:"Gruduation,omitempty"`
-	Certificates            []string  `json:"certificates,omitempty",xml:"-"`
-	PreviousWorkingPosition string    `json:"previousWorkingPosition,omitempty",xml:"-"`
+	Position                string   `json:"position,omitempty" bson:"position,omitempty"`
+	Specialization          string   `json:"specialization,omitempty" bson:"specialization,omitempty"`
+	DoctorGraduation        string   `json:"doctorGraduation,omitempty" bson:"doctorGraduation,omitempty"`
+	Certificates            []string `json:"certificates,omitempty" bson:"certificates,omitempty"`
+	PreviousWorkingPosition string   `json:"previousWorkingPosition,omitempty" bson:"previousWorkingPosition,omitempty"`
 	Person                  *Person
 }
+
 // method talk for Doctor to implement IWorker
-func (w Doctor) Talk() string{
+func (w Doctor) Talk() string {
 	s := fmt.Sprint(reflect.TypeOf(w))
-	str := strings.Split(s,".")
-	return fmt.Sprint("Hello I am ",w.Person.Name,"! My profession is ",str[1]," and I am working as ",w.Position,".")
+	str := strings.Split(s, ".")
+	return fmt.Sprint("Hello I am ", w.Person.Name, "! My profession is ", str[1], " and I am working as ", w.Position, ".")
 }
 
 type Manager struct {
-	Position string				     `json:"position,omitempty"`
-	ManagingSphere       string      `json:"managingSphere,omitempty",xml:"-"`
-	NeededSkills         []string    `json:"neededSkills,omitempty"xml:"Skills,omitempty"`
-	MinWorkingHoursInDay int         `json:"-",xml:"-"`
-	WorkingDaysInWeek    int         `json:"workingDaysInWeek,omitempty",xml:"-"`
+	Position             string   `json:"position,omitempty" bson:"position,omitempty"`
+	ManagingSphere       string   `json:"managingSphere,omitempty" bson:"managingSphere,omitempty"`
+	NeededSkills         []string `json:"neededSkills,omitempty" bson:"neededSkills,omitempty"`
+	MinWorkingHoursInDay int      `json:"minWorkingHoursInDay" bson:"minWorkingHoursInDay"`
+	WorkingDaysInWeek    int      `json:"workingDaysInWeek,omitempty" bson:"workingDaysInWeek,omitempty"`
 	Person               *Person
 }
+
 // method talk for Manager to implement IWorker
-func (w Manager) Talk() string{
+func (w Manager) Talk() string {
 	s := fmt.Sprint(reflect.TypeOf(w))
-	str := strings.Split(s,".")
-	return fmt.Sprint("Hello I am ",w.Person.Name,"! My profession is ",str[1]," and I am working as ",w.Position,".")
+	str := strings.Split(s, ".")
+	return fmt.Sprint("Hello I am ", w.Person.Name, "! My profession is ", str[1], " and I am working as ", w.Position, ".")
 }
 
-func println(){
+func println() {
 	fmt.Println("----------------------------------------------------------------------------------")
 }
 
-func StandartWorkersMap() *Cache{
+func StandartWorkersMap() *Cache {
 	developer := &Developer{
-		Position: "Junior Developer",
+		Position:             "Junior Developer",
 		ProgrammingLanguages: []string{"C#", "Go"},
 		SkillLevel:           "Junior",
 		ExperienceInYears:    1,
@@ -218,7 +228,7 @@ func StandartWorkersMap() *Cache{
 		},
 	}
 	teacher := &Teacher{
-		Position: "High school teacher",
+		Position:               "High school teacher",
 		Subject:                "Math",
 		LessonsInWeek:          12,
 		NumberOfTeachingGroups: 4,
@@ -234,7 +244,7 @@ func StandartWorkersMap() *Cache{
 		},
 	}
 	accountant := &Accountant{
-		Position: "Junior Accountant",
+		Position:                  "Junior Accountant",
 		ProgramToWorkWith:         "C1",
 		MaxWorkingHoursInDay:      10,
 		NeededExperienceInYears:   1,
@@ -251,7 +261,7 @@ func StandartWorkersMap() *Cache{
 		},
 	}
 	doctor := &Doctor{
-		Position: "Nurse",
+		Position:                "Nurse",
 		Specialization:          "Neiroherurg",
 		DoctorGraduation:        "Doctor",
 		Certificates:            []string{"Practical Courses of Bogomoltsa University 2019"},
@@ -268,7 +278,7 @@ func StandartWorkersMap() *Cache{
 		},
 	}
 	manager := &Manager{
-		Position: "Product manager",
+		Position:             "Product manager",
 		ManagingSphere:       "IT",
 		NeededSkills:         nil,
 		MinWorkingHoursInDay: 6,
@@ -287,11 +297,11 @@ func StandartWorkersMap() *Cache{
 
 	//Cash testing
 	cache1 := NewCash()
-	cache1.Add("developer",developer)
-	cache1.Add("doctor",doctor)
-	cache1.Add("manager",manager)
-	cache1.Add("accountant",accountant)
-	cache1.Add("teacher",teacher)
+	cache1.Add("developer", developer)
+	cache1.Add("doctor", doctor)
+	cache1.Add("manager", manager)
+	cache1.Add("accountant", accountant)
+	cache1.Add("teacher", teacher)
 
 	developerC := *developer
 	developerC.Position = "Chief"
@@ -304,29 +314,29 @@ func StandartWorkersMap() *Cache{
 	teacherC := *teacher
 	teacherC.Position = "Chief"
 
-	cache1.Add("developerCh",&developerC)
-	cache1.Add("doctorCh",&doctorC)
-	cache1.Add("managerCh",&managerC)
-	cache1.Add("accountantCh",&accountantC)
-	cache1.Add("teacherCh",&teacherC)
+	cache1.Add("developerCh", &developerC)
+	cache1.Add("doctorCh", &doctorC)
+	cache1.Add("managerCh", &managerC)
+	cache1.Add("accountantCh", &accountantC)
+	cache1.Add("teacherCh", &teacherC)
 
 	return cache1
 }
 
-func WorkersTalk(cache *Cache,waitgrWo,waitgrCh *sync.WaitGroup){
+func WorkersTalk(cache *Cache, waitgrWo, waitgrCh *sync.WaitGroup) {
 	waitgrCh.Wait()
 	cache.RLock()
 	defer cache.RUnlock()
-	for _,worker := range cache.Items{
+	for _, worker := range cache.Items {
 		fmt.Println(worker.Talk())
 	}
 	waitgrWo.Done()
 }
 
-func ChiefsTalk(cache *Cache,waitgrCh *sync.WaitGroup){
+func ChiefsTalk(cache *Cache, waitgrCh *sync.WaitGroup) {
 	cache.RLock()
 	defer cache.RUnlock()
-	for _,chief := range cache.Items{
+	for _, chief := range cache.Items {
 		fmt.Println(chief.Talk())
 	}
 	waitgrCh.Done()
