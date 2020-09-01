@@ -3,11 +3,9 @@ package testmod
 import (
 	"errors"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"reflect"
 	"strings"
 	"sync"
-
 )
 
 func WorkersToPerson(w IWorker) Person {
@@ -105,7 +103,7 @@ type IWorker interface {
 }
 
 type Person struct {
-	ID          primitive.ObjectID `json:"id" bson:"_id"`
+	//ID          primitive.ObjectID `json:"id" bson:"_id"`
 	Name        string             `json:"name" bson:"name"`
 	Surname     string             `json:"surname" bson:"surname"`
 	Patronymic  string             `json:"patronymic" bson:"patronymic"`
